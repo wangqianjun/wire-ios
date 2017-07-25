@@ -21,6 +21,7 @@ import Foundation
 
 @objc class SettingsCellDescriptorFactory: NSObject {
     static let settingsDevicesCellIdentifier: String = "devices"
+    static let debugMessagesCount = 10000
     let settingsPropertyFactory: SettingsPropertyFactory
     
     class DismissStepDelegate: NSObject, FormStepDelegate {
@@ -212,6 +213,8 @@ import Foundation
         developerCellDescriptors.append(shareDatabase)
         let reloadUIButton = SettingsButtonCellDescriptor(title: "Reload user interface", isDestructive: false, selectAction: SettingsCellDescriptorFactory.reloadUserInterface)
         developerCellDescriptors.append(reloadUIButton)
+        let insertMessagesButton = SettingsButtonCellDescriptor(title: "Insert \(SettingsCellDescriptorFactory.debugMessagesCount) messages in the top conversation", isDestructive: false, selectAction: SettingsCellDescriptorFactory.debugInsertMessages)
+        developerCellDescriptors.append(insertMessagesButton)
         
         return SettingsGroupCellDescriptor(items: [SettingsSectionDescriptor(cellDescriptors:developerCellDescriptors)], title: title, icon: .effectRobot)
     }
@@ -350,6 +353,24 @@ import Foundation
         }
         
         rootViewController.reloadCurrentController()
+    }
+    
+    private static func debugInsertMessages(_ type: SettingsCellDescriptorType) {
+        
+        
+        guard let userSession = ZMUserSession.shared(), let firstConversation = ZMConversationList.conversations(inUserSession: userSession).firstObject as? ZMConversation else {
+            return
+        }
+        let controller = UIAlertController(title: "Confirmation", message: "You are flooding conversation \(firstConversation.displayName)", preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "OK", style: .destructive) { _ in
+            (0...debugMessagesCount).forEach {
+                firstConversation.appendMessage(withText: "Message \($0)")
+            }
+        }
+        controller.addAction(okAction)
+        let cancelAction = UIAlertAction.cancel()
+        controller.addAction(cancelAction)
+        controller.presentTopmost()
     }
 }
 
